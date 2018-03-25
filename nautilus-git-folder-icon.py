@@ -34,12 +34,24 @@ class GitFolderIconExtension(GObject.GObject, Nautilus.InfoProvider):
         is_git_repo = os.path.exists(os.path.join(path, '.git'))
         if not is_git_repo:
             return
+
+        remotes = subprocess.check_output(
+            'git remote -v',
+            shell=True, cwd=path,
+        )
+        if 'github.com' in remotes:
+            emblem = 'github-repo'
+        elif remotes.strip() == '':
+            emblem = 'local-git-repo'
+        else:
+            emblem = 'git-repo'
+
         dirty = subprocess.check_output(
             'git status --porcelain 2>/dev/null | egrep "^(M| M)" | wc -l',
             shell=True, cwd=path,
         )
         dirty = bool(int(dirty.strip()))
         if dirty:
-            item.add_emblem('git-repo-dirty')
-        else:
-            item.add_emblem('git-repo')
+            emblem += '-dirty'
+
+        item.add_emblem(emblem)
